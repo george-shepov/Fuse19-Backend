@@ -170,23 +170,23 @@ const formValidationData = {
 
 const apiEndpoints = {
   auth: {
-    login: '/auth/login',
-    register: '/auth/register',
-    logout: '/auth/logout',
-    refresh: '/auth/refresh',
-    profile: '/auth/profile'
+    login: '/api/auth/login',
+    register: '/api/auth/register',
+    logout: '/api/auth/logout',
+    refresh: '/api/auth/refresh',
+    profile: '/api/auth/me'
   },
   users: {
-    list: '/users',
-    create: '/users',
-    update: '/users',
-    delete: '/users'
+    list: '/api/users',
+    create: '/api/users',
+    update: '/api/users',
+    delete: '/api/users'
   },
   contacts: {
-    list: '/contacts',
-    create: '/contacts',
-    update: '/contacts',
-    delete: '/contacts'
+    list: '/api/contacts',
+    create: '/api/contacts',
+    update: '/api/contacts',
+    delete: '/api/contacts'
   },
   notes: {
     list: '/notes',

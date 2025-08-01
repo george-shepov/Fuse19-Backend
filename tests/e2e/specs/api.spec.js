@@ -13,8 +13,8 @@ test.describe('API Endpoints', () => {
     test('should login via API', async () => {
       const response = await apiHelpers.apiRequest('POST', apiEndpoints.auth.login, {
         data: {
-          email: 'john.doe@example.com',
-          password: 'Password123!'
+          email: 'hughes.brian@company.com',
+          password: 'admin'
         }
       });
 
@@ -25,7 +25,7 @@ test.describe('API Endpoints', () => {
       expect(data.data.accessToken).toBeTruthy();
       expect(data.data.refreshToken).toBeTruthy();
       expect(data.data.user).toBeTruthy();
-      expect(data.data.user.email).toBe('john.doe@example.com');
+      expect(data.data.user.email).toBe('hughes.brian@company.com');
     });
 
     test('should reject invalid login credentials', async () => {

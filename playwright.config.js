@@ -6,7 +6,7 @@ const { defineConfig, devices } = require('@playwright/test');
  */
 module.exports = defineConfig({
   testDir: './tests/e2e/specs',
-  testMatch: ['simple-api.spec.js'],
+  testMatch: ['*.spec.js'],
   /* Run tests in files in parallel */
   fullyParallel: false, // Disable parallel to avoid conflicts with database seeding
   /* Fail the build on CI if you accidentally left test.only in the source code. */
@@ -24,7 +24,7 @@ module.exports = defineConfig({
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
-    baseURL: process.env.API_BASE_URL || 'http://localhost:5000',
+    baseURL: process.env.API_BASE_URL || 'http://localhost:5002',
     
     /* API base URL for API testing */
     extraHTTPHeaders: {
