@@ -8,7 +8,7 @@
 const http = require('http');
 const https = require('https');
 
-const BASE_URL = 'http://localhost:5002';
+const BASE_URL = 'http://localhost:5000';
 
 // Simple HTTP request helper
 function makeRequest(method, url, data = null) {
