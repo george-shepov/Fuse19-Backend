@@ -6,15 +6,83 @@ const ContactSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
+  // Fuse-compatible fields
+  name: {
+    type: String,
+    required: [true, 'Name is required'],
+    trim: true,
+    maxlength: [100, 'Name cannot exceed 100 characters']
+  },
+  // Multiple emails array (Fuse format)
+  emails: [{
+    email: {
+      type: String,
+      lowercase: true,
+      trim: true,
+      match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Please enter a valid email']
+    },
+    label: {
+      type: String,
+      enum: ['Personal', 'Work', 'Other'],
+      default: 'Personal'
+    }
+  }],
+  // Multiple phone numbers array (Fuse format)
+  phoneNumbers: [{
+    country: {
+      type: String,
+      default: 'us'
+    },
+    phoneNumber: {
+      type: String,
+      trim: true
+    },
+    label: {
+      type: String,
+      enum: ['Mobile', 'Work', 'Home', 'Other'],
+      default: 'Mobile'
+    }
+  }],
+  title: {
+    type: String,
+    maxlength: [100, 'Title cannot exceed 100 characters']
+  },
+  company: {
+    type: String,
+    maxlength: [100, 'Company name cannot exceed 100 characters']
+  },
+  // Single address string (Fuse format)
+  address: {
+    type: String,
+    maxlength: [500, 'Address cannot exceed 500 characters']
+  },
+  avatar: {
+    type: String,
+    default: null
+  },
+  background: {
+    type: String,
+    default: null
+  },
+  tags: [{
+    type: String,
+    trim: true,
+    maxlength: [30, 'Tag cannot exceed 30 characters']
+  }],
+  notes: {
+    type: String,
+    maxlength: [2000, 'Notes cannot exceed 2000 characters']
+  },
+  birthday: Date,
+
+  // Legacy fields for backward compatibility
   firstName: {
     type: String,
-    required: [true, 'First name is required'],
     trim: true,
     maxlength: [50, 'First name cannot exceed 50 characters']
   },
   lastName: {
     type: String,
-    required: [true, 'Last name is required'],
     trim: true,
     maxlength: [50, 'Last name cannot exceed 50 characters']
   },
@@ -28,35 +96,19 @@ const ContactSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
-  company: {
-    type: String,
-    maxlength: [100, 'Company name cannot exceed 100 characters']
-  },
   position: {
     type: String,
     maxlength: [100, 'Position cannot exceed 100 characters']
   },
-  address: {
+  structuredAddress: {
     street: String,
     city: String,
     state: String,
     country: String,
     zipCode: String
   },
-  avatar: {
-    type: String,
-    default: null
-  },
-  tags: [{
-    type: String,
-    trim: true,
-    maxlength: [30, 'Tag cannot exceed 30 characters']
-  }],
-  notes: {
-    type: String,
-    maxlength: [1000, 'Notes cannot exceed 1000 characters']
-  },
-  birthday: Date,
+
+  // Additional fields
   isFavorite: {
     type: Boolean,
     default: false
@@ -96,6 +148,48 @@ const ContactSchema = new mongoose.Schema({
   }
 }, {
   timestamps: true
+});
+
+// Pre-save middleware for data transformation
+ContactSchema.pre('save', async function(next) {
+  // Sync between Fuse format and legacy format
+  if (this.isModified('firstName') || this.isModified('lastName')) {
+    this.name = `${this.firstName || ''} ${this.lastName || ''}`.trim();
+  }
+
+  if (this.isModified('name') && !this.firstName && !this.lastName) {
+    const nameParts = this.name.split(' ');
+    this.firstName = nameParts[0] || '';
+    this.lastName = nameParts.slice(1).join(' ') || '';
+  }
+
+  // Sync single email with emails array
+  if (this.isModified('email') && this.email) {
+    if (!this.emails || this.emails.length === 0) {
+      this.emails = [{ email: this.email, label: 'Personal' }];
+    } else if (this.emails[0].email !== this.email) {
+      this.emails[0] = { email: this.email, label: this.emails[0].label || 'Personal' };
+    }
+  }
+
+  // Sync single phone with phoneNumbers array
+  if (this.isModified('phone') && this.phone) {
+    if (!this.phoneNumbers || this.phoneNumbers.length === 0) {
+      this.phoneNumbers = [{ phoneNumber: this.phone, country: 'us', label: 'Mobile' }];
+    } else if (this.phoneNumbers[0].phoneNumber !== this.phone) {
+      this.phoneNumbers[0].phoneNumber = this.phone;
+    }
+  }
+
+  // Sync position with title
+  if (this.isModified('position')) {
+    this.title = this.position;
+  }
+  if (this.isModified('title')) {
+    this.position = this.title;
+  }
+
+  next();
 });
 
 // Indexes

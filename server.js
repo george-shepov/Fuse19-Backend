@@ -49,7 +49,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : ['http://localhost:4200', 'http://localhost:3000'],
+    origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : ['http://localhost:4200', 'http://localhost:5000'],
     methods: ['GET', 'POST'],
     credentials: true
   }
@@ -92,7 +92,7 @@ const corsOptions = {
 
     const allowedOrigins = process.env.ALLOWED_ORIGINS ?
       process.env.ALLOWED_ORIGINS.split(',') :
-      ['http://localhost:4200', 'http://localhost:3000'];
+      ['http://localhost:4200', 'http://localhost:5000'];
 
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);

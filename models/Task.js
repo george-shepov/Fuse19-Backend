@@ -6,12 +6,58 @@ const TaskSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
+  // Fuse-compatible fields
   title: {
     type: String,
     required: [true, 'Task title is required'],
     trim: true,
     maxlength: [200, 'Title cannot exceed 200 characters']
   },
+  type: {
+    type: String,
+    enum: ['task', 'section'],
+    default: 'task'
+  },
+  notes: {
+    type: String,
+    maxlength: [2000, 'Notes cannot exceed 2000 characters']
+  },
+  completed: {
+    type: Boolean,
+    default: false
+  },
+  priority: {
+    type: Number,
+    min: 0,
+    max: 3,
+    default: 1 // 0=low, 1=medium, 2=high, 3=urgent
+  },
+  assignedTo: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null
+  },
+  subTasks: [{
+    id: {
+      type: String,
+      default: () => new mongoose.Types.ObjectId().toString()
+    },
+    title: {
+      type: String,
+      required: true,
+      maxlength: [200, 'Subtask title cannot exceed 200 characters']
+    },
+    completed: {
+      type: Boolean,
+      default: false
+    }
+  }],
+  order: {
+    type: Number,
+    default: 0
+  },
+
+  // Legacy fields for backward compatibility
   description: {
     type: String,
     maxlength: [2000, 'Description cannot exceed 2000 characters']
@@ -21,7 +67,7 @@ const TaskSchema = new mongoose.Schema({
     enum: ['todo', 'in-progress', 'completed', 'cancelled'],
     default: 'todo'
   },
-  priority: {
+  priorityString: {
     type: String,
     enum: ['low', 'medium', 'high', 'urgent'],
     default: 'medium'
@@ -176,6 +222,50 @@ const TaskSchema = new mongoose.Schema({
   }]
 }, {
   timestamps: true
+});
+
+// Pre-save middleware for data transformation
+TaskSchema.pre('save', async function(next) {
+  // Sync between Fuse format and legacy format
+  if (this.isModified('notes')) {
+    this.description = this.notes;
+  }
+  if (this.isModified('description')) {
+    this.notes = this.description;
+  }
+
+  // Sync completed status with status enum
+  if (this.isModified('completed')) {
+    if (this.completed) {
+      this.status = 'completed';
+      this.completedAt = new Date();
+    } else if (this.status === 'completed') {
+      this.status = 'todo';
+      this.completedAt = null;
+    }
+  }
+
+  if (this.isModified('status')) {
+    this.completed = this.status === 'completed';
+    if (this.status === 'completed' && !this.completedAt) {
+      this.completedAt = new Date();
+    } else if (this.status !== 'completed') {
+      this.completedAt = null;
+    }
+  }
+
+  // Sync priority number with priority string
+  if (this.isModified('priority') && typeof this.priority === 'number') {
+    const priorityMap = { 0: 'low', 1: 'medium', 2: 'high', 3: 'urgent' };
+    this.priorityString = priorityMap[this.priority] || 'medium';
+  }
+
+  if (this.isModified('priorityString')) {
+    const priorityMap = { 'low': 0, 'medium': 1, 'high': 2, 'urgent': 3 };
+    this.priority = priorityMap[this.priorityString] || 1;
+  }
+
+  next();
 });
 
 // Indexes
