@@ -104,7 +104,7 @@ export class AuthService {
                     this._authenticated = true;
 
                     // Store the user on the user service
-                    this._userService.user = response.data;
+                    this._userService.user = response.data?.user || response.data;
 
                     // Return true
                     return of(true);
