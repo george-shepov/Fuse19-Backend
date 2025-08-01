@@ -125,7 +125,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // API versioning middleware
 app.use('/api/', apiVersioning);
-app.use('/api/', versionedResponse);
+// app.use('/api/', versionedResponse); // Disabled to prevent double wrapping
 
 // Rate limiting middleware
 app.use(addRateLimitHeaders);

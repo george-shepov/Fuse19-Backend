@@ -17,6 +17,18 @@ function auth(req, res, next) {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    // Handle demo user in development
+    if (decoded.user.id === 'demo-user-id' && process.env.NODE_ENV === 'development') {
+      req.user = {
+        id: 'demo-user-id',
+        name: 'Brian Hughes',
+        email: 'hughes.brian@company.com',
+        role: 'admin'
+      };
+      return next();
+    }
+
     req.user = decoded.user;
     next();
   } catch (err) {
@@ -50,7 +62,18 @@ function optionalAuth(req, res, next) {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded.user;
+
+    // Handle demo user in development
+    if (decoded.user.id === 'demo-user-id' && process.env.NODE_ENV === 'development') {
+      req.user = {
+        id: 'demo-user-id',
+        name: 'Brian Hughes',
+        email: 'hughes.brian@company.com',
+        role: 'admin'
+      };
+    } else {
+      req.user = decoded.user;
+    }
   } catch (err) {
     req.user = null;
   }

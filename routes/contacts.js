@@ -10,7 +10,43 @@ router.use(auth);
 // @route   GET /api/contacts
 router.get('/', asyncHandler(async (req, res) => {
   const { page = 1, limit = 20, search, tags, isFavorite, company } = req.query;
-  
+
+  // Handle demo user in development
+  if (req.user.id === 'demo-user-id' && process.env.NODE_ENV === 'development') {
+    const sampleContacts = [
+      {
+        id: '1',
+        firstName: 'Alice',
+        lastName: 'Johnson',
+        email: 'alice.johnson@testcompany.com',
+        phone: '+1-555-0101',
+        company: 'Test Company Inc',
+        position: 'Software Engineer',
+        notes: 'Frontend specialist',
+        tags: ['work', 'frontend'],
+        isFavorite: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      },
+      {
+        id: '2',
+        firstName: 'Bob',
+        lastName: 'Smith',
+        email: 'bob.smith@anothertest.com',
+        phone: '+1-555-0102',
+        company: 'Another Test LLC',
+        position: 'Project Manager',
+        notes: 'Great communicator',
+        tags: ['work', 'management'],
+        isFavorite: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }
+    ];
+
+    return res.json({ success: true, data: { contacts: sampleContacts } });
+  }
+
   const contacts = await Contact.searchContacts(req.user.id, search, {
     page: parseInt(page),
     limit: parseInt(limit),
@@ -18,7 +54,7 @@ router.get('/', asyncHandler(async (req, res) => {
     isFavorite: isFavorite === 'true' ? true : isFavorite === 'false' ? false : undefined,
     company
   });
-  
+
   res.json({ success: true, data: { contacts } });
 }));
 

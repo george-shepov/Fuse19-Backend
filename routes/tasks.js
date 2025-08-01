@@ -7,6 +7,56 @@ const router = express.Router();
 router.use(auth);
 
 router.get('/', asyncHandler(async (req, res) => {
+  // Handle demo user in development
+  if (req.user.id === 'demo-user-id' && process.env.NODE_ENV === 'development') {
+    const sampleTasks = [
+      {
+        id: '1',
+        title: 'Complete API Documentation',
+        description: 'Write comprehensive API documentation for all endpoints',
+        status: 'in-progress',
+        priority: 'high',
+        dueDate: new Date(Date.now() + 86400000 * 3).toISOString(), // 3 days from now
+        tags: ['documentation', 'api'],
+        assignees: [
+          { id: 'demo-user-id', name: 'Brian Hughes', avatar: 'assets/images/avatars/male-01.jpg' }
+        ],
+        createdAt: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
+        updatedAt: new Date().toISOString()
+      },
+      {
+        id: '2',
+        title: 'Fix Authentication Bug',
+        description: 'Resolve the JWT token validation issue in production',
+        status: 'todo',
+        priority: 'urgent',
+        dueDate: new Date(Date.now() + 86400000).toISOString(), // 1 day from now
+        tags: ['bug', 'authentication'],
+        assignees: [
+          { id: 'demo-user-id', name: 'Brian Hughes', avatar: 'assets/images/avatars/male-01.jpg' }
+        ],
+        createdAt: new Date(Date.now() - 172800000).toISOString(), // 2 days ago
+        updatedAt: new Date(Date.now() - 86400000).toISOString() // 1 day ago
+      },
+      {
+        id: '3',
+        title: 'Code Review',
+        description: 'Review pull requests from the team',
+        status: 'completed',
+        priority: 'medium',
+        dueDate: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
+        tags: ['review', 'code'],
+        assignees: [
+          { id: 'demo-user-id', name: 'Brian Hughes', avatar: 'assets/images/avatars/male-01.jpg' }
+        ],
+        createdAt: new Date(Date.now() - 259200000).toISOString(), // 3 days ago
+        updatedAt: new Date(Date.now() - 86400000).toISOString() // 1 day ago
+      }
+    ];
+
+    return res.json({ success: true, data: { tasks: sampleTasks } });
+  }
+
   const tasks = await Task.getUserTasks(req.user.id, req.query);
   res.json({ success: true, data: { tasks } });
 }));

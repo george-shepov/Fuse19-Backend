@@ -6,7 +6,7 @@ const { defineConfig, devices } = require('@playwright/test');
  */
 module.exports = defineConfig({
   testDir: './tests/e2e/specs',
-  testMatch: ['simple-api.spec.js'],
+  testMatch: ['backend-api.spec.js'],
   /* Run tests in files in parallel */
   fullyParallel: false, // Disable parallel to avoid conflicts with database seeding
   /* Fail the build on CI if you accidentally left test.only in the source code. */
@@ -55,9 +55,9 @@ module.exports = defineConfig({
     },
   ],
 
-  /* Global setup and teardown */
-  globalSetup: require.resolve('./tests/e2e/global-setup.js'),
-  globalTeardown: require.resolve('./tests/e2e/global-teardown.js'),
+  /* Global setup and teardown - disabled for backend API testing */
+  // globalSetup: require.resolve('./tests/e2e/global-setup.js'),
+  // globalTeardown: require.resolve('./tests/e2e/global-teardown.js'),
 
   // webServer disabled for external API testing
 

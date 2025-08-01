@@ -10,7 +10,41 @@ router.use(auth);
 // @route   GET /api/notes
 router.get('/', asyncHandler(async (req, res) => {
   const { page = 1, limit = 20, search, tags, category, isPinned, isArchived, isFavorite, color } = req.query;
-  
+
+  // Handle demo user in development
+  if (req.user.id === 'demo-user-id' && process.env.NODE_ENV === 'development') {
+    const sampleNotes = [
+      {
+        id: '1',
+        title: 'Project Meeting Notes',
+        content: 'Discussed the new features for Q1 release. Need to focus on user experience improvements.',
+        tags: ['work', 'meeting'],
+        category: 'work',
+        isPinned: true,
+        isArchived: false,
+        isFavorite: false,
+        color: '#2196F3',
+        createdAt: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
+        updatedAt: new Date().toISOString()
+      },
+      {
+        id: '2',
+        title: 'Shopping List',
+        content: 'Milk, Bread, Eggs, Coffee, Fruits',
+        tags: ['personal', 'shopping'],
+        category: 'personal',
+        isPinned: false,
+        isArchived: false,
+        isFavorite: true,
+        color: '#4CAF50',
+        createdAt: new Date(Date.now() - 172800000).toISOString(), // 2 days ago
+        updatedAt: new Date(Date.now() - 86400000).toISOString() // 1 day ago
+      }
+    ];
+
+    return res.json({ success: true, data: { notes: sampleNotes } });
+  }
+
   const notes = await Note.searchNotes(req.user.id, search, {
     page: parseInt(page),
     limit: parseInt(limit),
@@ -21,7 +55,7 @@ router.get('/', asyncHandler(async (req, res) => {
     isFavorite: isFavorite === 'true' ? true : isFavorite === 'false' ? false : undefined,
     color
   });
-  
+
   res.json({ success: true, data: { notes } });
 }));
 
