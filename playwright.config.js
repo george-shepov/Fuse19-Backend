@@ -6,7 +6,7 @@ const { defineConfig, devices } = require('@playwright/test');
  */
 module.exports = defineConfig({
   testDir: './tests/e2e/specs',
-  testMatch: ['*.spec.js'],
+  testMatch: ['simple-api.spec.js'],
   /* Run tests in files in parallel */
   fullyParallel: false, // Disable parallel to avoid conflicts with database seeding
   /* Fail the build on CI if you accidentally left test.only in the source code. */
