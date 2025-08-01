@@ -4,6 +4,8 @@ const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
 const { asyncHandler, AppError } = require('../middleware/error');
 const { setCache, deleteCache } = require('../config/cache');
+const { sendEmail } = require('../config/email');
+const { validatePassword } = require('../utils/passwordValidator');
 
 // Generate JWT token
 const generateToken = (userId) => {
@@ -39,8 +41,25 @@ exports.register = asyncHandler(async (req, res) => {
     throw new AppError('Passwords do not match', 400, 'PASSWORD_MISMATCH');
   }
 
-  if (password.length < 6) {
-    throw new AppError('Password must be at least 6 characters long', 400, 'PASSWORD_TOO_SHORT');
+  // Validate password strength
+  const userInfo = { name, email };
+  const passwordValidation = validatePassword(password, userInfo);
+  
+  if (!passwordValidation.isValid) {
+    throw new AppError(
+      `Password does not meet security requirements: ${passwordValidation.errors.join(', ')}`,
+      400,
+      'WEAK_PASSWORD',
+      {
+        passwordValidation: {
+          errors: passwordValidation.errors,
+          warnings: passwordValidation.warnings,
+          suggestions: passwordValidation.suggestions,
+          score: passwordValidation.score,
+          strength: passwordValidation.strength
+        }
+      }
+    );
   }
 
   // Check if user exists
@@ -53,13 +72,28 @@ exports.register = asyncHandler(async (req, res) => {
   const user = new User({
     name: name.trim(),
     email: email.toLowerCase().trim(),
-    password,
-    emailVerificationToken: uuidv4()
+    password
   });
 
+  // Generate email verification token
+  const verificationToken = user.generateEmailVerificationToken();
   await user.save();
 
-  // Generate tokens
+  // Send verification email
+  try {
+    const verificationUrl = `${process.env.FRONTEND_URL || 'http://localhost:4200'}/auth/verify-email?token=${verificationToken}`;
+    
+    await sendEmail(
+      user.email,
+      'emailVerification',
+      { verificationUrl, userName: user.name }
+    );
+  } catch (emailError) {
+    console.error('Failed to send verification email:', emailError);
+    // Don't fail registration if email fails - just log it
+  }
+
+  // Generate tokens (but user needs to verify email to be fully active)
   const accessToken = generateToken(user._id);
   const refreshToken = generateRefreshToken();
 
@@ -75,11 +109,12 @@ exports.register = asyncHandler(async (req, res) => {
 
   res.status(201).json({
     success: true,
-    message: 'User registered successfully',
+    message: 'User registered successfully. Please check your email to verify your account.',
     data: {
       user: user.toJSON(),
       accessToken,
-      refreshToken
+      refreshToken,
+      emailVerificationRequired: true
     }
   });
 });
@@ -424,14 +459,27 @@ exports.forgotPassword = asyncHandler(async (req, res) => {
   }
 
   // Generate reset token
-  const resetToken = uuidv4();
-  user.passwordResetToken = resetToken;
-  user.passwordResetExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
+  const resetToken = user.generatePasswordResetToken();
   await user.save();
 
-  // TODO: Send email with reset token
-  // For now, just log it (remove in production)
-  console.log(`Password reset token for ${email}: ${resetToken}`);
+  // Send password reset email
+  try {
+    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:4200'}/auth/reset-password?token=${resetToken}`;
+    
+    await sendEmail(
+      user.email,
+      'passwordReset',
+      { resetUrl, userName: user.name }
+    );
+  } catch (emailError) {
+    console.error('Failed to send password reset email:', emailError);
+    // Clear the reset token if email fails
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+    await user.save();
+    
+    throw new AppError('Error sending password reset email. Please try again.', 500, 'EMAIL_SEND_ERROR');
+  }
 
   res.json({
     success: true,
@@ -477,5 +525,122 @@ exports.resetPassword = asyncHandler(async (req, res) => {
   res.json({
     success: true,
     message: 'Password reset successfully. Please login with your new password.'
+  });
+});
+
+// @desc    Verify email
+// @route   POST /api/auth/verify-email
+// @access  Public
+exports.verifyEmail = asyncHandler(async (req, res) => {
+  const { token } = req.body;
+
+  if (!token) {
+    throw new AppError('Verification token is required', 400, 'MISSING_TOKEN');
+  }
+
+  const user = await User.findOne({
+    emailVerificationToken: token,
+    emailVerificationExpires: { $gt: Date.now() }
+  });
+
+  if (!user) {
+    throw new AppError('Invalid or expired verification token', 400, 'INVALID_TOKEN');
+  }
+
+  // Verify the email
+  await user.verifyEmail();
+
+  // Send welcome email
+  try {
+    await sendEmail(
+      user.email,
+      'welcomeEmail',
+      { userName: user.name }
+    );
+  } catch (emailError) {
+    console.error('Failed to send welcome email:', emailError);
+    // Don't fail verification if welcome email fails
+  }
+
+  // Update cache
+  await setCache(`user:${user._id}`, user.toJSON(), 3600);
+
+  res.json({
+    success: true,
+    message: 'Email verified successfully! Welcome to Fuse19.',
+    data: {
+      user: user.toJSON()
+    }
+  });
+});
+
+// @desc    Resend verification email
+// @route   POST /api/auth/resend-verification
+// @access  Public/Private
+exports.resendVerificationEmail = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    throw new AppError('Email address is required', 400, 'MISSING_EMAIL');
+  }
+
+  const user = await User.findByEmail(email);
+
+  if (!user) {
+    // Don't reveal if user exists or not
+    return res.json({
+      success: true,
+      message: 'If an account with that email exists and is unverified, we have sent a new verification email.'
+    });
+  }
+
+  if (user.isEmailVerified) {
+    return res.json({
+      success: true,
+      message: 'Email is already verified.'
+    });
+  }
+
+  // Generate new verification token
+  const verificationToken = user.generateEmailVerificationToken();
+  await user.save();
+
+  // Send verification email
+  try {
+    const verificationUrl = `${process.env.FRONTEND_URL || 'http://localhost:4200'}/auth/verify-email?token=${verificationToken}`;
+    
+    await sendEmail(
+      user.email,
+      'emailVerification',
+      { verificationUrl, userName: user.name }
+    );
+  } catch (emailError) {
+    console.error('Failed to send verification email:', emailError);
+    throw new AppError('Error sending verification email. Please try again.', 500, 'EMAIL_SEND_ERROR');
+  }
+
+  res.json({
+    success: true,
+    message: 'If an account with that email exists and is unverified, we have sent a new verification email.'
+  });
+});
+
+// @desc    Check email verification status
+// @route   GET /api/auth/verify-status
+// @access  Private
+exports.getVerificationStatus = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user.id);
+
+  if (!user) {
+    throw new AppError('User not found', 404, 'USER_NOT_FOUND');
+  }
+
+  res.json({
+    success: true,
+    data: {
+      isEmailVerified: user.isEmailVerified,
+      email: user.email,
+      verificationTokenExpires: user.emailVerificationExpires
+    }
   });
 });

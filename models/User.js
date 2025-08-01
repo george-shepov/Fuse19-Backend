@@ -113,6 +113,7 @@ const UserSchema = new mongoose.Schema({
     default: false
   },
   emailVerificationToken: String,
+  emailVerificationExpires: Date,
   passwordResetToken: String,
   passwordResetExpires: Date,
   refreshTokens: [{
@@ -130,6 +131,7 @@ const UserSchema = new mongoose.Schema({
     transform: function(doc, ret) {
       delete ret.password;
       delete ret.emailVerificationToken;
+      delete ret.emailVerificationExpires;
       delete ret.passwordResetToken;
       delete ret.passwordResetExpires;
       delete ret.refreshTokens;
@@ -209,6 +211,36 @@ UserSchema.statics.getPaginated = function(page = 1, limit = 10, filters = {}) {
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(limit);
+};
+
+// Generate email verification token
+UserSchema.methods.generateEmailVerificationToken = function() {
+  const crypto = require('crypto');
+  const token = crypto.randomBytes(32).toString('hex');
+  
+  this.emailVerificationToken = token;
+  this.emailVerificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+  
+  return token;
+};
+
+// Generate password reset token
+UserSchema.methods.generatePasswordResetToken = function() {
+  const crypto = require('crypto');
+  const token = crypto.randomBytes(32).toString('hex');
+  
+  this.passwordResetToken = token;
+  this.passwordResetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+  
+  return token;
+};
+
+// Verify email
+UserSchema.methods.verifyEmail = function() {
+  this.isEmailVerified = true;
+  this.emailVerificationToken = undefined;
+  this.emailVerificationExpires = undefined;
+  return this.save();
 };
 
 module.exports = mongoose.model('User', UserSchema);

@@ -1,0 +1,11 @@
+{
+  "scripts": {
+    "seed": "node seeders/index.js",
+    "seed:clear": "node seeders/index.js --clear-all",
+    "seed:users": "node seeders/index.js --users-only",
+    "seed:contacts": "node seeders/index.js --contacts-only", 
+    "seed:notes": "node seeders/index.js --notes-only",
+    "seed:tasks": "node seeders/index.js --tasks-only",
+    "seed:prod": "NODE_ENV=production node seeders/index.js --yes"
+  }
+}
