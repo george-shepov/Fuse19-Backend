@@ -84,10 +84,6 @@ export class AuthService {
         return this._httpClient
             .get(`${environment.apiUrl}/auth/me`)
             .pipe(
-                catchError(() =>
-                    // Return false
-                    of(false)
-                ),
                 switchMap((response: any) => {
                     // Replace the access token with the new one if it's available on
                     // the response object.
@@ -108,6 +104,12 @@ export class AuthService {
 
                     // Return true
                     return of(true);
+                }),
+                catchError(() => {
+                    // Clear authentication state on error
+                    this._authenticated = false;
+                    // Return false
+                    return of(false);
                 })
             );
     }
