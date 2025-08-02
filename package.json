@@ -19,8 +19,7 @@
     "seed:contacts": "node seeders/index.js --contacts-only",
     "seed:notes": "node seeders/index.js --notes-only",
     "seed:tasks": "node seeders/index.js --tasks-only",
-    "seed:prod": "NODE_ENV=production node seeders/index.js --yes",
-    "process-filings": "node scripts/process-filings.js"
+    "seed:prod": "NODE_ENV=production node seeders/index.js --yes"
   },
   "dependencies": {
     "axios": "^1.11.0",

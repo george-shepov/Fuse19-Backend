@@ -14,6 +14,13 @@ async function seedTestData() {
   // Create test users
   const users = [
     {
+      name: 'Brian Hughes',
+      email: 'hughes.brian@company.com',
+      password: await bcrypt.hash('admin', 10),
+      role: 'admin',
+      isEmailVerified: true
+    },
+    {
       name: 'John Doe',
       email: 'john.doe@example.com',
       password: await bcrypt.hash('Password123!', 10),
@@ -37,11 +44,12 @@ async function seedTestData() {
   ];
 
   const createdUsers = await User.insertMany(users);
-  const firstUser = createdUsers.find(u => u.email === 'john.doe@example.com');
+  const firstUser = createdUsers.find(u => u.email === 'hughes.brian@company.com');
 
   // Create test contacts
   const contacts = [
     {
+      name: 'Alice Johnson',
       firstName: 'Alice',
       lastName: 'Johnson',
       email: 'alice.johnson@testcompany.com',
@@ -50,6 +58,7 @@ async function seedTestData() {
       owner: firstUser._id
     },
     {
+      name: 'Bob Smith',
       firstName: 'Bob',
       lastName: 'Smith',
       email: 'bob.smith@anothertest.com',
@@ -85,14 +94,16 @@ async function seedTestData() {
       title: 'Complete E2E Tests',
       description: 'Finish implementing Playwright tests',
       status: 'todo',
-      priority: 'high',
+      priority: 2, // 2 = high priority
+      priorityString: 'high',
       owner: firstUser._id
     },
     {
       title: 'Review Code',
       description: 'Code review for new features',
       status: 'completed',
-      priority: 'medium',
+      priority: 1, // 1 = medium priority
+      priorityString: 'medium',
       owner: firstUser._id
     }
   ];
@@ -106,19 +117,23 @@ async function globalSetup() {
   console.log('🔧 Starting global setup for E2E tests...');
 
   try {
-    // Start in-memory MongoDB instance for testing
-    mongod = await MongoMemoryServer.create({
-      instance: {
-        port: 27018, // Different port from main app
-        dbName: 'fuse19_e2e_test'
-      }
-    });
-
-    const mongoUri = mongod.getUri();
-    process.env.MONGODB_URI = mongoUri;
-    process.env.MONGODB_TEST_URI = mongoUri;
-
-    console.log(`📦 Test MongoDB started at: ${mongoUri}`);
+    // Use existing test database or create in-memory one
+    let mongoUri = process.env.MONGO_TEST_URI || 'mongodb://localhost:27017/fuse19_test';
+    
+    // If no test URI is provided, start in-memory MongoDB instance
+    if (!process.env.MONGO_TEST_URI) {
+      mongod = await MongoMemoryServer.create({
+        instance: {
+          port: 27018,
+          dbName: 'fuse19_e2e_test'
+        }
+      });
+      mongoUri = mongod.getUri();
+      process.env.MONGO_TEST_URI = mongoUri;
+      console.log(`📦 Test MongoDB started at: ${mongoUri}`);
+    } else {
+      console.log(`📦 Using existing test database: ${mongoUri}`);
+    }
 
     // Connect to test database (close existing connection first)
     if (mongoose.connection.readyState !== 0) {

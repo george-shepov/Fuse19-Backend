@@ -11,11 +11,13 @@ async function globalTeardown() {
       console.log('✅ Mongoose connection closed');
     }
 
-    // Stop MongoDB memory server
+    // Stop MongoDB memory server if we started one
     const mongod = global.__MONGOD__;
     if (mongod) {
       await mongod.stop();
       console.log('✅ Test MongoDB stopped');
+    } else {
+      console.log('✅ Using external test database, no cleanup needed');
     }
 
     info('E2E global teardown completed successfully');

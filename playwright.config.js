@@ -55,11 +55,11 @@ module.exports = defineConfig({
     },
   ],
 
-  /* Global setup and teardown - disabled for backend API testing */
-  // globalSetup: require.resolve('./tests/e2e/global-setup.js'),
-  // globalTeardown: require.resolve('./tests/e2e/global-teardown.js'),
+  /* Global setup and teardown */
+  globalSetup: require.resolve('./tests/e2e/global-setup.js'),
+  globalTeardown: require.resolve('./tests/e2e/global-teardown.js'),
 
-  // webServer disabled for external API testing
+  /* Note: Start backend server manually with: NODE_ENV=test npm run dev */
 
   /* Test timeout */
   timeout: 60000, // 60 seconds per test
