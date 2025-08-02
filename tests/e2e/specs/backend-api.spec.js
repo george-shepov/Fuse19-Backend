@@ -1,7 +1,7 @@
 const { test, expect } = require('@playwright/test');
 
 test.describe('Backend API Tests', () => {
-  const baseURL = 'http://localhost:5000';
+  const baseURL = 'http://127.0.0.1:5000';
   let authToken = null;
 
   test.beforeAll(async ({ request }) => {
@@ -272,7 +272,7 @@ test.describe('Backend API Tests', () => {
       const data = await response.json();
       
       expect(data.status).toBe('OK');
-      expect(data.environment).toBe('development');
+      expect(data.environment).toBe('test');
     });
   });
 });

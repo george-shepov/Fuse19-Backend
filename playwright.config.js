@@ -24,7 +24,7 @@ module.exports = defineConfig({
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
-    baseURL: process.env.API_BASE_URL || 'http://localhost:5000',
+    baseURL: process.env.API_BASE_URL || 'http://127.0.0.1:5000',
     
     /* API base URL for API testing */
     extraHTTPHeaders: {
@@ -55,11 +55,8 @@ module.exports = defineConfig({
     },
   ],
 
-  /* Global setup and teardown */
-  globalSetup: require.resolve('./tests/e2e/global-setup.js'),
-  globalTeardown: require.resolve('./tests/e2e/global-teardown.js'),
-
   /* Note: Start backend server manually with: NODE_ENV=test npm run dev */
+  /* Global setup and teardown are disabled - run server manually */
 
   /* Test timeout */
   timeout: 60000, // 60 seconds per test
