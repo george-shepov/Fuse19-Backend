@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const http = require('http');
+const path = require('path');
 const { Server } = require('socket.io');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -40,6 +41,7 @@ const shortcutsRoutes = require('./routes/shortcuts');
 const activitiesRoutes = require('./routes/activities');
 const scrumboardRoutes = require('./routes/scrumboard');
 const ecommerceRoutes = require('./routes/ecommerce');
+const filingsRoutes = require('./routes/filings');
 const uploadRoutes = require('./routes/upload');
 const passwordRoutes = require('./routes/password');
 const adminRoutes = require('./routes/admin');
@@ -133,6 +135,9 @@ app.use('/api/', dynamicRateLimiter);
 
 // Static file serving
 app.use('/uploads', express.static('uploads'));
+app.use('/pdfs', express.static(path.join(__dirname, 'public/pdfs')));
+app.use('/images', express.static(path.join(__dirname, 'public/images')));
+app.use(express.static(path.join(__dirname, 'public')));
 
 // API Documentation
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, swaggerConfig));
@@ -183,6 +188,7 @@ app.use('/api/shortcuts', shortcutsRoutes);
 app.use('/api/activities', activitiesRoutes);
 app.use('/api/scrumboard', scrumboardRoutes);
 app.use('/api/ecommerce', ecommerceRoutes);
+app.use('/api/filings', filingsRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/password', passwordRoutes);
 app.use('/api/admin', adminRoutes);
